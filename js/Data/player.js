@@ -19,7 +19,7 @@ Properties:
 
 var playerData ={
 	info:{
-		src:`images/idle_R.png`
+		src:`images/ronin_tilesheet.png`
 	},
 	states:{
 		//The idle animation 
