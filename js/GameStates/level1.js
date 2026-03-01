@@ -30,26 +30,17 @@ wiz.canJump = true;
 
 var leftBorder = new GameObject({ width: 50, height: canvas.height, world: level, x: 0 });
 
-// Cave foreground Tile Grid
-var cave = new Grid(caveData, { world: level, x: 1024, tileHeight: 64, tileWidth: 64 });
-// Cave background Tile Grid
-var caveBack = new Grid(caveBackData, { world: level, x: 1024, tileHeight: 64, tileWidth: 64 });
-// cave hitbox grid
+/* -------------------- CAVE COLLISION GRID (HITBOX ONLY) --------------------
+   This grid is NOT drawn — it's only used for collisions via Group.collide().
+   Positioned in the world where your old cave preset lived (x:1024).
+---------------------------------------------------------------------------- */
 var caveHit = new Grid(caveHitData, { world: level, x: 1024, tileHeight: 64, tileWidth: 64 });
 
 // Collision group
 var g1 = new Group();
 g1.add([ground, leftBorder, caveHit.grid]);
 
-// Sprite groups
-var sprites = new Group();
-sprites.add([caveBack.grid]);
-
-var front = new Group();
-front.add([cave.grid]);
-
-/* -------------------- PARALLAX BACKGROUND SETUP -------------------- */
-
+/* -------------------- OUTDOOR PARALLAX -------------------- */
 var sky = new GameObject({ width: canvas.width, height: canvas.height, color: "white" });
 sky.img.src = `images/Sky.png`;
 
@@ -75,16 +66,64 @@ function wrapLayer(layer) {
   if (layer.x >= layer.width) layer.x -= layer.width;
 }
 
-function drawLoop(layer) {
+function drawLoopOutdoor(layer) {
   var drawY = layer.yAnchorBottom ? canvas.height - layer.height : 0;
-
   layer.drawStaticImage({ x: 0, y: drawY });
   layer.drawStaticImage({ x: -layer.width, y: drawY });
   layer.drawStaticImage({ x: layer.width, y: drawY });
 }
 
-/* ------------------ BULLETS ---------------------- */
+/* -------------------- CAVE VISUAL LAYERS (FULL IMAGES) --------------------
+   Uses caveVisual from cave.js.
+   These are drawn ONLY inside the cave zone.
+---------------------------------------------------------------------------- */
+var caveLayers = [];
+for (let i = 0; i < caveVisual.layers.length; i++) {
+  let L = caveVisual.layers[i];
 
+  let obj = new GameObject({
+    x: 0,
+    y: 0,
+    width: caveVisual.width,
+    height: caveVisual.height,
+    world: { x: 0, y: 0 } // not tied to level; we move x manually
+  });
+
+  obj.img.src = L.src;
+  obj.scrollSpeed = L.speed;
+  caveLayers.push(obj);
+}
+
+function wrapLoopX(layer) {
+  if (layer.x <= -layer.width) layer.x += layer.width;
+  if (layer.x >= layer.width) layer.x -= layer.width;
+}
+
+function drawLoopCave(layer) {
+  // Draw at origin (top-left), plus extra copies to loop seamlessly
+  layer.drawStaticImage({ x: layer.x, y: 0, w: layer.width, h: layer.height });
+  layer.drawStaticImage({ x: layer.x - layer.width, y: 0, w: layer.width, h: layer.height });
+  layer.drawStaticImage({ x: layer.x + layer.width, y: 0, w: layer.width, h: layer.height });
+}
+
+/* -------------------- CAVE ZONE (ONLY SHOW CAVE HERE) --------------------
+   Cave preset used to start around x:1024. We keep that.
+   End is computed from the hit grid width.
+---------------------------------------------------------------------------- */
+var CAVE_START_X = 1024;
+var CAVE_TILE_W = 64;
+var CAVE_TILES_W = (caveHitData && caveHitData.info && caveHitData.info.layout && caveHitData.info.layout[0])
+  ? caveHitData.info.layout[0].length
+  : 35;
+var CAVE_END_X = CAVE_START_X + (CAVE_TILES_W * CAVE_TILE_W);
+
+function inCaveZone() {
+  // Camera/world position approximation: as you move right, level.x becomes negative.
+  var cameraX = -level.x;
+  return cameraX >= CAVE_START_X && cameraX <= CAVE_END_X;
+}
+
+/* ------------------ BULLETS (INVISIBLE HITBOXES) ---------------------- */
 var bullets = [];
 var canShoot = true;
 var shotTimer = 0;
@@ -92,15 +131,13 @@ var shotDelay = 21;
 var currentBullet = 0;
 
 for (let i = 0; i < 100; i++) {
-  bullets[i] = new GameObject({ width: 64, height: 64 });
-  bullets[i].makeSprite(playerData);
+  bullets[i] = new GameObject({ width: 20, height: 20 });
   bullets[i].y = -10000;
-  bullets[i].changeState(`walk`);
 }
 
 var wasAirborne = false;
 
-// Cache ground pattern (will be created once image is loaded)
+// Cache ground pattern
 var groundPattern = null;
 
 function drawTexturedGround() {
@@ -113,7 +150,6 @@ function drawTexturedGround() {
   context.save();
   context.fillStyle = groundPattern;
 
-  // draw in world space (ground has world: level)
   var drawX = (ground.x + ground.world.x) - ground.width / 2;
   var drawY = (ground.y + ground.world.y) - ground.height / 2;
 
@@ -155,7 +191,7 @@ gameStates[`level1`] = function () {
   shotTimer--;
   canShoot = shotTimer <= 0;
 
-  // Attack (space)
+  // Attack (space) -> invisible hitbox "bullet"
   if (keys[` `] && canShoot) {
     wiz.changeState(`attack`);
     shotTimer = shotDelay;
@@ -164,14 +200,12 @@ gameStates[`level1`] = function () {
     bullets[currentBullet].world = level;
     bullets[currentBullet].x = wiz.x - level.x + (wiz.dir * 96);
     bullets[currentBullet].y = wiz.y + 20;
-    bullets[currentBullet].dir = wiz.dir;
 
     currentBullet++;
     if (currentBullet >= bullets.length) currentBullet = 0;
   }
 
   /* -------- Movement -------- */
-
   wiz.vy += gravity;
   wiz.vx *= friction.x;
   wiz.vy *= friction.y;
@@ -220,62 +254,73 @@ gameStates[`level1`] = function () {
     }
   }
 
-  // Camera movement
+  // Camera movement + parallax movement
   if (wiz.x < canvas.width * .33 || wiz.x > canvas.width * .66) {
     wiz.x -= offset.x;
     level.x -= offset.x;
 
-    clouds.x -= offset.x * clouds.scrollSpeed;
-    mBack.x -= offset.x * mBack.scrollSpeed;
-    mMid.x -= offset.x * mMid.scrollSpeed;
-    mFront.x -= offset.x * mFront.scrollSpeed;
-    bgTrees.x -= offset.x * bgTrees.scrollSpeed;
-    trees.x -= offset.x * trees.scrollSpeed;
-    gras.x -= offset.x * gras.scrollSpeed;
-    groundStrip.x -= offset.x * groundStrip.scrollSpeed;
+    // Only move outdoor parallax when NOT in cave
+    if (!inCaveZone()) {
+      clouds.x -= offset.x * clouds.scrollSpeed;
+      mBack.x -= offset.x * mBack.scrollSpeed;
+      mMid.x -= offset.x * mMid.scrollSpeed;
+      mFront.x -= offset.x * mFront.scrollSpeed;
+      bgTrees.x -= offset.x * bgTrees.scrollSpeed;
+      trees.x -= offset.x * trees.scrollSpeed;
+      gras.x -= offset.x * gras.scrollSpeed;
+      groundStrip.x -= offset.x * groundStrip.scrollSpeed;
 
-    wrapLayer(clouds);
-    wrapLayer(mBack);
-    wrapLayer(mMid);
-    wrapLayer(mFront);
-    wrapLayer(bgTrees);
-    wrapLayer(trees);
-    wrapLayer(gras);
-    wrapLayer(groundStrip);
+      wrapLayer(clouds);
+      wrapLayer(mBack);
+      wrapLayer(mMid);
+      wrapLayer(mFront);
+      wrapLayer(bgTrees);
+      wrapLayer(trees);
+      wrapLayer(gras);
+      wrapLayer(groundStrip);
+    }
+
+    // Only move cave layers when IN cave
+    if (inCaveZone()) {
+      for (let i = 0; i < caveLayers.length; i++) {
+        caveLayers[i].x -= offset.x * caveLayers[i].scrollSpeed;
+        wrapLoopX(caveLayers[i]);
+      }
+    }
   }
 
   /* -------- DRAW -------- */
 
-  // Draw sky
-  var skyPattern = context.createPattern(sky.img, `repeat`);
-  sky.color = skyPattern;
-  sky.render();
+  // Draw either outdoor OR cave visuals depending on zone
+  if (inCaveZone()) {
+    for (let i = 0; i < caveLayers.length; i++) {
+      drawLoopCave(caveLayers[i]);
+    }
+  } else {
+    // Draw sky
+    var skyPattern = context.createPattern(sky.img, `repeat`);
+    sky.color = skyPattern;
+    sky.render();
 
-  // Draw parallax layers
-  drawLoop(clouds);
-  drawLoop(mBack);
-  drawLoop(mMid);
-  drawLoop(mFront);
-  drawLoop(bgTrees);
-  drawLoop(trees);
-  drawLoop(gras);
-  drawLoop(groundStrip);
+    // Draw outdoor parallax layers
+    drawLoopOutdoor(clouds);
+    drawLoopOutdoor(mBack);
+    drawLoopOutdoor(mMid);
+    drawLoopOutdoor(mFront);
+    drawLoopOutdoor(bgTrees);
+    drawLoopOutdoor(trees);
+    drawLoopOutdoor(gras);
+    drawLoopOutdoor(groundStrip);
+  }
 
-  // Draw textured collision ground (no green rect)
+  // Draw textured collision ground
   drawTexturedGround();
 
-  // Cave back tiles
-  sprites.play().render(`drawSprite`);
-
   // Player
-  wiz.play(function(){ return; }).drawSprite();
+  wiz.play(function () { return; }).drawSprite();
 
-  // Bullets
+  // Invisible bullets still move (do not draw)
   for (let i = 0; i < bullets.length; i++) {
-  bullets[i].move();
-  // No drawSprite() → bullets are invisible but still active
-}
-
-  // Cave front tiles
-  front.play().render(`drawSprite`);
+    bullets[i].move();
+  }
 };
