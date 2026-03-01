@@ -2,17 +2,6 @@
 var gravity = 1;
 var friction = { x: .85, y: .97 };
 
-/**
- * IMPORTANT FIX:
- * Your images are in src/images/, so they must be referenced through the bundler.
- * This helper makes a correct URL to those files in production (GitHub Pages) too.
- *
- * Works great in Vite (and most ESM bundlers).
- */
-function asset(fileName) {
-  return new URL(`./images/${fileName}`, import.meta.url).href;
-}
-
 var stage = new GameObject({ width: canvas.width, height: canvas.height });
 
 // A level object when it is moved other objects move with it.
@@ -30,9 +19,7 @@ var ground = new GameObject({
   y: canvas.height - 32,
   world: level
 });
-
-// ✅ FIXED: was `images/ground.png`
-ground.img.src = asset("ground.png");
+ground.img.src = `images/ground.png`;
 
 // Spawn player ON the ground
 wiz.x = canvas.width * 0.25;
@@ -52,13 +39,11 @@ g1.add([ground, leftBorder, caveHit.grid]);
 
 /* -------------------- OUTDOOR PARALLAX -------------------- */
 var sky = new GameObject({ width: canvas.width, height: canvas.height, color: "white" });
-// ✅ FIXED: was `images/Sky.png`
-sky.img.src = asset("Sky.png");
+sky.img.src = `images/Sky.png`;
 
 function makeLayer(src, speed, yAnchorBottom) {
   var o = new GameObject({ x: 0, y: 0, width: 1024, height: 512 });
-  // ✅ FIXED: was `images/` + src
-  o.img.src = asset(src);
+  o.img.src = `images/` + src;
   o.scrollSpeed = speed;
   o.yAnchorBottom = !!yAnchorBottom;
   return o;
