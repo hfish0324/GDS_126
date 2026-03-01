@@ -30,10 +30,7 @@ wiz.canJump = true;
 
 var leftBorder = new GameObject({ width: 50, height: canvas.height, world: level, x: 0 });
 
-/* -------------------- CAVE COLLISION GRID (HITBOX ONLY) --------------------
-   This grid is NOT drawn — it's only used for collisions via Group.collide().
-   Positioned in the world where your old cave preset lived (x:1024).
----------------------------------------------------------------------------- */
+/* -------------------- CAVE COLLISION GRID (HITBOX ONLY) -------------------- */
 var caveHit = new Grid(caveHitData, { world: level, x: 1024, tileHeight: 64, tileWidth: 64 });
 
 // Collision group
@@ -73,10 +70,7 @@ function drawLoopOutdoor(layer) {
   layer.drawStaticImage({ x: layer.width, y: drawY });
 }
 
-/* -------------------- CAVE VISUAL LAYERS (FULL IMAGES) --------------------
-   Uses caveVisual from cave.js.
-   These are drawn ONLY inside the cave zone.
----------------------------------------------------------------------------- */
+/* -------------------- CAVE VISUAL LAYERS (FULL IMAGES) -------------------- */
 var caveLayers = [];
 for (let i = 0; i < caveVisual.layers.length; i++) {
   let L = caveVisual.layers[i];
@@ -86,7 +80,7 @@ for (let i = 0; i < caveVisual.layers.length; i++) {
     y: 0,
     width: caveVisual.width,
     height: caveVisual.height,
-    world: { x: 0, y: 0 } // not tied to level; we move x manually
+    world: { x: 0, y: 0 }
   });
 
   obj.img.src = L.src;
@@ -100,16 +94,22 @@ function wrapLoopX(layer) {
 }
 
 function drawLoopCave(layer) {
-  // Draw at origin (top-left), plus extra copies to loop seamlessly
   layer.drawStaticImage({ x: layer.x, y: 0, w: layer.width, h: layer.height });
   layer.drawStaticImage({ x: layer.x - layer.width, y: 0, w: layer.width, h: layer.height });
   layer.drawStaticImage({ x: layer.x + layer.width, y: 0, w: layer.width, h: layer.height });
 }
 
-/* -------------------- CAVE ZONE (ONLY SHOW CAVE HERE) --------------------
-   Cave preset used to start around x:1024. We keep that.
-   End is computed from the hit grid width.
----------------------------------------------------------------------------- */
+/* -------------------- CAVE ENTRANCE PREVIEW (VISIBLE BEFORE ENTERING) -------------------- */
+var caveEntrance = new GameObject({
+  x: 0,
+  y: 0,
+  width: caveVisual.width,
+  height: caveVisual.height,
+  world: { x: 0, y: 0 }
+});
+caveEntrance.img.src = caveVisual.entrance.image;
+
+/* -------------------- CAVE ZONE -------------------- */
 var CAVE_START_X = 1024;
 var CAVE_TILE_W = 64;
 var CAVE_TILES_W = (caveHitData && caveHitData.info && caveHitData.info.layout && caveHitData.info.layout[0])
@@ -117,10 +117,36 @@ var CAVE_TILES_W = (caveHitData && caveHitData.info && caveHitData.info.layout &
   : 35;
 var CAVE_END_X = CAVE_START_X + (CAVE_TILES_W * CAVE_TILE_W);
 
+function cameraX() {
+  return -level.x;
+}
+
 function inCaveZone() {
-  // Camera/world position approximation: as you move right, level.x becomes negative.
-  var cameraX = -level.x;
-  return cameraX >= CAVE_START_X && cameraX <= CAVE_END_X;
+  var cx = cameraX();
+  return cx >= CAVE_START_X && cx <= CAVE_END_X;
+}
+
+// 0..1 alpha for entrance overlay before cave starts
+function entranceAlpha() {
+  var cx = cameraX();
+  var preview = caveVisual.entrance.previewWidth;
+  var fade = caveVisual.entrance.fadeWidth;
+
+  // show between (start - preview) to start
+  var startPreview = CAVE_START_X - preview;
+  if (cx < startPreview) return 0;
+  if (cx >= CAVE_START_X) return 0; // once inside, we switch to cave visuals
+
+  // fade in from startPreview..(startPreview+fade), then stay at 1 until start
+  var t = (cx - startPreview);
+  if (t <= 0) return 0;
+  if (t >= preview) return 1;
+
+  // smoothstep-ish fade for first 'fade' pixels
+  var a = t / fade;
+  if (a < 0) a = 0;
+  if (a > 1) a = 1;
+  return a;
 }
 
 /* ------------------ BULLETS (INVISIBLE HITBOXES) ---------------------- */
@@ -259,8 +285,14 @@ gameStates[`level1`] = function () {
     wiz.x -= offset.x;
     level.x -= offset.x;
 
-    // Only move outdoor parallax when NOT in cave
-    if (!inCaveZone()) {
+    if (inCaveZone()) {
+      // move cave layers when inside cave
+      for (let i = 0; i < caveLayers.length; i++) {
+        caveLayers[i].x -= offset.x * caveLayers[i].scrollSpeed;
+        wrapLoopX(caveLayers[i]);
+      }
+    } else {
+      // move outdoor parallax when outside cave
       clouds.x -= offset.x * clouds.scrollSpeed;
       mBack.x -= offset.x * mBack.scrollSpeed;
       mMid.x -= offset.x * mMid.scrollSpeed;
@@ -279,30 +311,21 @@ gameStates[`level1`] = function () {
       wrapLayer(gras);
       wrapLayer(groundStrip);
     }
-
-    // Only move cave layers when IN cave
-    if (inCaveZone()) {
-      for (let i = 0; i < caveLayers.length; i++) {
-        caveLayers[i].x -= offset.x * caveLayers[i].scrollSpeed;
-        wrapLoopX(caveLayers[i]);
-      }
-    }
   }
 
   /* -------- DRAW -------- */
 
-  // Draw either outdoor OR cave visuals depending on zone
   if (inCaveZone()) {
+    // Inside cave: draw cave layers
     for (let i = 0; i < caveLayers.length; i++) {
       drawLoopCave(caveLayers[i]);
     }
   } else {
-    // Draw sky
+    // Outside cave: draw outdoor
     var skyPattern = context.createPattern(sky.img, `repeat`);
     sky.color = skyPattern;
     sky.render();
 
-    // Draw outdoor parallax layers
     drawLoopOutdoor(clouds);
     drawLoopOutdoor(mBack);
     drawLoopOutdoor(mMid);
@@ -311,6 +334,20 @@ gameStates[`level1`] = function () {
     drawLoopOutdoor(trees);
     drawLoopOutdoor(gras);
     drawLoopOutdoor(groundStrip);
+
+    // Entrance preview overlay (fades in as you approach cave)
+    var a = entranceAlpha();
+    if (a > 0) {
+      context.save();
+      context.globalAlpha = a;
+
+      // Draw entrance as a centered overlay (same size as cave visuals)
+      caveEntrance.drawStaticImage({ x: 0, y: 0, w: caveEntrance.width, h: caveEntrance.height });
+      caveEntrance.drawStaticImage({ x: -caveEntrance.width, y: 0, w: caveEntrance.width, h: caveEntrance.height });
+      caveEntrance.drawStaticImage({ x: caveEntrance.width, y: 0, w: caveEntrance.width, h: caveEntrance.height });
+
+      context.restore();
+    }
   }
 
   // Draw textured collision ground
