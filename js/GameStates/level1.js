@@ -39,7 +39,7 @@ g1.add([ground, leftBorder, caveHit.grid]);
 
 /* -------------------- OUTDOOR PARALLAX -------------------- */
 var sky = new GameObject({ width: canvas.width, height: canvas.height, color: "white" });
-sky.img.src = `images/Sky.png`;
+sky.img.src = `images/sky.png`;
 
 function makeLayer(src, speed, yAnchorBottom) {
   var o = new GameObject({ x: 0, y: 0, width: 1024, height: 512 });
@@ -56,7 +56,7 @@ var mFront = makeLayer("Mountain_Front.png", 0.40, true);
 var bgTrees = makeLayer("BackgroundTrees.png", 0.55, true);
 var trees = makeLayer("Trees.png", 0.70, true);
 var gras = makeLayer("Gras.png", 0.90, true);
-var groundStrip = makeLayer("Ground.png", 1.00, true);
+var groundStrip = makeLayer("ground.png", 1.00, true);
 
 function wrapLayer(layer) {
   if (layer.x <= -layer.width) layer.x += layer.width;
