@@ -1,97 +1,93 @@
 /*----------------------------------------------
-This file contains the data used to render the player's sprites
-Properties:
-	Object: info | information about the sprite file
-		String: info.src | The location of the spritesheet
-	Object: states | contains the data for each animation state
-		Object: [`state name`] | The data used to render the idle state
-			Number: fps | The frame rate in which to render the animation
-			Boolean: cycle | Whether or not the animation will loop
-			Array: frames| Contains objects with geometric data for each frame of animtati.
-					Must contain at least one frame object.
-					The animation will run for however many frame objects are added to the array
-				Object: [index number] | A frame of animation
-					Number: width | the actual 1/1 horizontal size of the portion of image file to be rendered
-					Number: height | the actual 1/1 vertical size of the portion of image file to be rendered
-					Number: startX | the horizontal starting point of the portion of image file to be rendered
-					Nunber: startY | the vertical starting point of the portion of image file to be rendered
-/*----------------------------------------------*/
+player.js (UPDATED for strip-based animations)
 
-var playerData ={
-	info:{
-		src:`images/ronin_tilesheet.png`
-	},
-	states:{
-		//The idle animation 
-    	idle:
-		{
-			fps:16,
-			cycle:true,
-			frames:
-			[
-				{width:128, height:128, startX:0, startY:0},
-				{width:128, height:128, startX:128, startY:0},
-				{width:128, height:128, startX:256, startY:0},
-				{width:128, height:128, startX:384, startY:0}
-				
-			]
-		},
-		//The walwidth:128, height:128,
-		walk:
-		{
-			fps:1,
-			cycle:true,
-			frames:
-			[
-				{width:128, height:128, startX:0, startY:0},
-				{width:128, height:128, startX:128, startY:0},
-				{width:128, height:128, startX:256, startY:0},
-				{width:128, height:128, startX:384, startY:0},
-				{width:128, height:128, startX:512, startY:0}
-			]
-		},
-		//The jump animation 
-		jump:
-		{
-			fps:15,
-			cycle:false,
-			frames:
-			[
-				{width:128, height:128, startX:640, startY:0}
-			]
-		},
-		//The crouch animation 
-		crouch:
-		{
-			fps:15,
-			cycle:true,
-			frames:
-			[
-				{width:128, height:128, startX:768, startY:0},
-				{width:128, height:128, startX:768, startY:0},
-				{width:128, height:128, startX:768, startY:0},
-				{width:128, height:128, startX:768, startY:0},
-				{width:128, height:128, startX:896, startY:0}
-			]
-		},
-		//The attack animation 
-		attack:
-		{
-			fps:3,
-			cycle:false,
-			//width:300,
-			frames:
-			[
-				{width:128, height:128, startX:1024, startY:0},
-				{width:128, height:128, startX:1024, startY:0},
-				{width:128, height:128, startX:1024, startY:0},
-				{width:128, height:128, startX:1152, startY:0},
-				{width:128, height:128, startX:1152, startY:0},
-				{width:128, height:128, startX:1152, startY:0},
-				{width:128, height:128, startX:1152, startY:0}
-				
-			]
-		}
-	}
-		
+Adds: jump, fall, land (optional) using your strips.
+Each state uses its own horizontal spritesheet strip.
+
+IMPORTANT: In your engine, "fps" is actually "ticks per frame"
+(counter decrements each update). Smaller = faster animation.
+----------------------------------------------*/
+
+function buildFrames(count, frameW, frameH, startY) {
+  frameW = frameW ?? 64;
+  frameH = frameH ?? 48;
+  startY = startY ?? 0;
+
+  const frames = [];
+  for (let i = 0; i < count; i++) {
+    frames.push({
+      width: frameW,
+      height: frameH,
+      startX: i * frameW,
+      startY: startY
+    });
+  }
+  return frames;
 }
+
+var playerData = {
+  // Kept for backwards compatibility; GameObject will prefer per-state src.
+  info: {
+    src: `images/idle_R.png`
+  },
+
+  states: {
+    idle: {
+      src: `images/idle_R.png`,
+      fps: 2,
+      cycle: true,
+      frames: buildFrames(16, 64, 48)
+    },
+
+    // Your engine expects "walk" state name.
+    // We map it to the run strip.
+    walk: {
+      src: `images/run_R.png`,
+      fps: 1,
+      cycle: true,
+      frames: buildFrames(12, 64, 48)
+    },
+
+    // Jump start / ascent (non-looping)
+    jump: {
+      src: `images/jump_R.png`,
+      fps: 2,
+      cycle: false,
+      frames: buildFrames(3, 64, 48)
+    },
+
+    // Falling / in-air descent (usually looping)
+    fall: {
+      src: `images/fall_R.png`,
+      fps: 2,
+      cycle: true,
+      frames: buildFrames(4, 64, 48)
+    },
+
+    // Landing impact (non-looping)
+    land: {
+      src: `images/land_R.png`,
+      fps: 2,
+      cycle: false,
+      frames: buildFrames(2, 64, 48)
+    },
+
+    // You don’t have a crouch strip in what you posted.
+    // This makes crouch a static hold on the first idle frame.
+    crouch: {
+      src: `images/idle_R.png`,
+      fps: 999999,
+      cycle: false,
+      frames: [
+        { width: 64, height: 48, startX: 0, startY: 0 }
+      ]
+    },
+
+    attack: {
+      src: `images/attack_R.png`,
+      fps: 1,
+      cycle: false,
+      frames: buildFrames(9, 64, 48)
+    }
+  }
+};
