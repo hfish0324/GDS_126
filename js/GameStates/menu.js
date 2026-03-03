@@ -24,7 +24,7 @@ function makeMenuLayer(src, speed, yAnchorBottom) {
 }
 
 var menuSky = new GameObject({ width: canvas.width, height: canvas.height });
-menuSky.img.src = `images/Sky.png`;
+menuSky.img.src = `images/sky.png`;
 
 var menuClouds   = makeMenuLayer("Clouds.png", 0.10, false);
 var menuBack     = makeMenuLayer("Mountain_Back.png", 0.18, true);
@@ -34,7 +34,7 @@ var menuFuji     = makeMenuLayer("Fuji.png", 0.32, true);
 var menuBgTrees  = makeMenuLayer("BackgroundTrees.png", 0.55, true);
 var menuTrees    = makeMenuLayer("Trees.png", 0.70, true);
 var menuGrass    = makeMenuLayer("Gras.png", 0.90, true);
-var menuGround   = makeMenuLayer("Ground.png", 1.00, true);
+var menuGround   = makeMenuLayer("ground.png", 1.00, true);
 
 // slight auto-scroll so menu feels alive
 var menuScrollSpeed = 0.35;
