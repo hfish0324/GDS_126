@@ -210,6 +210,7 @@ gameStates[`level1`] = function () {
     wiz.canJump = false;
     wiz.vy = wiz.jumpHeight;
     wiz.changeState(`jump`);
+    if (sounds) sounds.play(`jump`);
     wasAirborne = true;
   }
 
@@ -220,6 +221,7 @@ gameStates[`level1`] = function () {
   // Attack (space) -> invisible hitbox "bullet"
   if (keys[` `] && canShoot) {
     wiz.changeState(`attack`);
+    if (sounds) sounds.play(`attack`);
     shotTimer = shotDelay;
 
     bullets[currentBullet].vx = 5 * wiz.dir;

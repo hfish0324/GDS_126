@@ -6,6 +6,7 @@ class SoundManager
         {
             let soundName = _soundNodes[i].getAttribute(`name`);
             this[soundName] = _soundNodes[i];
+            this[soundName].load();
         }
     }
 

@@ -14,6 +14,9 @@ var startButton = new GameObject({
 startButton.hitBoxWidth = startButton.width;
 startButton.hitBoxHeight = startButton.height;
 
+// ---------- Menu Music ----------
+var menuMusicStarted = false;
+
 // ---------- Menu Parallax Layers ----------
 function makeMenuLayer(src, speed, yAnchorBottom) {
 	var o = new GameObject({ x: 0, y: 0, width: 1024, height: 512 });
@@ -73,13 +76,19 @@ function drawStartButton(isHover) {
 	context.font = "28px Arial";
 	context.textAlign = "center";
 	context.textBaseline = "middle";
-	context.fillText(isHover ? "START" : "START", 0, 2);
+	context.fillText("START", 0, 2);
 
 	context.restore();
 }
 
 // ---------- Menu State ----------
 gameStates[`menu`] = function () {
+
+	// start menu music once
+	if (!menuMusicStarted && sounds) {
+		sounds.play(`menuMusic`, 0, true);
+		menuMusicStarted = true;
+	}
 
 	// auto parallax drift
 	menuClouds.x  -= menuScrollSpeed * menuClouds.scrollSpeed;
@@ -103,12 +112,10 @@ gameStates[`menu`] = function () {
 	wrapMenuLayer(menuGround);
 
 	// draw background stack
-	// sky
 	var skyPattern = context.createPattern(menuSky.img, `repeat`);
 	menuSky.color = skyPattern;
 	menuSky.render();
 
-	// parallax layers
 	drawMenuLoop(menuClouds);
 	drawMenuLoop(menuBack);
 	drawMenuLoop(menuMiddle);
@@ -123,6 +130,8 @@ gameStates[`menu`] = function () {
 	var hover = startButton.overlap(mouse);
 
 	if (hover && mouse.pressed) {
+		if (sounds) sounds.stop(`menuMusic`);
+		menuMusicStarted = false;
 		gameStates.changeState(`level1`);
 	}
 
