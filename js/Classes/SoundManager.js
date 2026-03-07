@@ -1,33 +1,46 @@
 class SoundManager
 {
     constructor(_soundNodes)
-    {             
-        for(let i=0; i<_soundNodes.length; i++)
+    {
+        for(let i = 0; i < _soundNodes.length; i++)
         {
-             this[_soundNodes[i].getAttribute(`name`)]=_soundNodes[i]
+            let soundName = _soundNodes[i].getAttribute(`name`);
+            this[soundName] = _soundNodes[i];
         }
     }
-    play(_sound, _start=0, _loop=false)
+
+    play(_sound, _start = 0, _loop = false)
     {
-        try
+        if(!this[_sound])
         {
-            this[_sound].currentTime=_start
-            this[_sound].loop = _loop
-            this[_sound].play();
+            console.log(`Sound not loaded: ${_sound}`);
+            return;
         }
-        catch
+
+        this[_sound].pause();
+        this[_sound].currentTime = _start;
+        this[_sound].loop = _loop;
+        this[_sound].play().catch(function(error)
         {
-           throw new Error(`Sound is not loaded`)
-        }
+            console.log(`Could not play sound: ${_sound}`, error);
+        });
+    }
+
+    stop(_sound)
+    {
+        if(!this[_sound]) return;
+
+        this[_sound].pause();
+        this[_sound].currentTime = 0;
     }
 }
-let soundNodes=document.querySelectorAll(`audio`)
-if(soundNodes.length>0) var sounds=new SoundManager(soundNodes)
-soundNodes=null
 
+let soundNodes = document.querySelectorAll(`audio`);
+let sounds = null;
 
+if(soundNodes.length > 0)
+{
+    sounds = new SoundManager(soundNodes);
+}
 
-
-
-
-//document.addEventListener(`click`, ()=>  sounds.play(`splode`,.5))
+soundNodes = null;

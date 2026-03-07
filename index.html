@@ -1,51 +1,45 @@
 <!doctype html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<meta name="author" content="Jay Aguiar">
-	<title>VGD126 Game</title>
-	<!--CSS File-->
-		<link type="text/css" rel="stylesheet" href="css/style.css" />
+    <meta charset="utf-8">
+    <meta name="author" content="Jay Aguiar">
+    <title>VGD126 Game</title>
+    <link type="text/css" rel="stylesheet" href="css/style.css" />
 </head>
 
 <body>
-	<!--The Game Canvas-->
-	<canvas id="canvas" width = "1024" height ="512" >
-    	Your browser is outdated and does not support HTML5. Please update to the latest version.
+    <canvas id="canvas" width="1024" height="512">
+        Your browser is outdated and does not support HTML5. Please update to the latest version.
     </canvas>
 
-	<!--Audio Files-->
-        <!--sounds/-->
-        <audio src="./sounds/splode.mp3" name="splode"></audio>
+    <!-- Audio Files -->
+    <audio src="./sounds/splode.mp3" name="splode"></audio>
+    <audio src="./sounds/jump.mp3" name="jump"></audio>
+    <audio src="./sounds/attack.mp3" name="attack"></audio>
 
-    <!--JavaScript Files-->
+    <!-- Classes -->
+    <script src="./js/Classes/SoundManager.js"></script>
+    <script src="./js/Classes/GameObject.js"></script>
+    <script src="./js/Classes/Grid.js"></script>
+    <script src="./js/Classes/Group.js"></script>
+    <script src="./js/Classes/StateManager.js"></script>
 
-        <!--js/data/-->
-        <script src="./js/Data/player.js"></script>
-        <script src="./js/Data/cave.js"></script>
+    <!-- UI -->
+    <script src="./js/ui/keys.js"></script>
+    <script src="./js/ui/mouse.js"></script>
 
-        <!--js/classes/-->
-        <script src="./js/Classes/SoundManager.js"></script>
-        <script src="./js/Classes/GameObject.js"></script>
+    <!-- Utility -->
+    <script src="./js/Utility/Random.js"></script>
 
-        <script src="./js/Classes/Grid.js"></script>
-        <script src="./js/Classes/Group.js"></script>
+    <!-- Data -->
+    <script src="./js/Data/player.js"></script>
+    <script src="./js/Data/cave.js"></script>
 
-        <script src="./js/Classes/StateManager.js"></script>
+    <!-- Game States -->
+    <script src="./js/GameStates/menu.js"></script>
+    <script src="./js/GameStates/level1.js"></script>
 
-        <!--js/ui/-->
-        <script src="./js/ui/keys.js"></script>
-        <script src="./js/ui/mouse.js"></script>
-
-        <!--js/utility/-->
-        <script src="./js/Utility/Random.js"></script>
-
-        <!--js/gamestates/-->
-        <script src="./js/GameStates/menu.js"></script>
-        <script src="./js/GameStates/level1.js"></script>
-
-        <!--js/-->
-        <script src="./js/game.js"></script>
-
+    <!-- Main Game File -->
+    <script src="./js/game.js"></script>
 </body>
 </html>
