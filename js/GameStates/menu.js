@@ -3,7 +3,7 @@ This file contains all of the code for the Main Menu
 Uses parallax layers as the menu background (same canvas: 1024x512)
 ----------------------------------*/
 
-// ---------- Button ----------
+// ---------- Start Button ----------
 var startButton = new GameObject({
 	x: canvas.width / 2,
 	y: canvas.height * 0.68,
@@ -14,7 +14,17 @@ var startButton = new GameObject({
 startButton.hitBoxWidth = startButton.width;
 startButton.hitBoxHeight = startButton.height;
 
-// ---------- Menu Music ----------
+// ---------- Music Button ----------
+var musicButton = new GameObject({
+	x: canvas.width - 95,
+	y: 45,
+	width: 150,
+	height: 45,
+	color: `rgba(0,0,0,0)`
+});
+musicButton.hitBoxWidth = musicButton.width;
+musicButton.hitBoxHeight = musicButton.height;
+
 var menuMusicStarted = false;
 
 // ---------- Menu Parallax Layers ----------
@@ -56,22 +66,18 @@ function drawMenuLoop(layer) {
 
 // ---------- Button Drawing ----------
 function drawStartButton(isHover) {
-	// button base
 	context.save();
 	context.translate(startButton.x, startButton.y);
 
-	// shadow-ish backing
 	context.globalAlpha = 0.85;
 	context.fillStyle = isHover ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.65)";
 	context.fillRect(-startButton.width / 2, -startButton.height / 2, startButton.width, startButton.height);
 
-	// border
 	context.globalAlpha = 1;
 	context.strokeStyle = isHover ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.70)";
 	context.lineWidth = 3;
 	context.strokeRect(-startButton.width / 2, -startButton.height / 2, startButton.width, startButton.height);
 
-	// text
 	context.fillStyle = "rgba(255,255,255,0.95)";
 	context.font = "28px Arial";
 	context.textAlign = "center";
@@ -81,14 +87,36 @@ function drawStartButton(isHover) {
 	context.restore();
 }
 
+function drawMusicButton(isHover) {
+	context.save();
+	context.translate(musicButton.x, musicButton.y);
+
+	context.globalAlpha = 0.85;
+	context.fillStyle = isHover ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.60)";
+	context.fillRect(-musicButton.width / 2, -musicButton.height / 2, musicButton.width, musicButton.height);
+
+	context.globalAlpha = 1;
+	context.strokeStyle = isHover ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.70)";
+	context.lineWidth = 2;
+	context.strokeRect(-musicButton.width / 2, -musicButton.height / 2, musicButton.width, musicButton.height);
+
+	context.fillStyle = "rgba(255,255,255,0.95)";
+	context.font = "20px Arial";
+	context.textAlign = "center";
+	context.textBaseline = "middle";
+
+	if (menuMusicStarted) {
+		context.fillText("MUSIC: ON", 0, 1);
+	}
+	else {
+		context.fillText("MUSIC: OFF", 0, 1);
+	}
+
+	context.restore();
+}
+
 // ---------- Menu State ----------
 gameStates[`menu`] = function () {
-
-	// start menu music once
-	if (!menuMusicStarted && sounds) {
-		sounds.play(`menuMusic`, 0, true);
-		menuMusicStarted = true;
-	}
 
 	// auto parallax drift
 	menuClouds.x  -= menuScrollSpeed * menuClouds.scrollSpeed;
@@ -111,7 +139,7 @@ gameStates[`menu`] = function () {
 	wrapMenuLayer(menuGrass);
 	wrapMenuLayer(menuGround);
 
-	// draw background stack
+	// draw background
 	var skyPattern = context.createPattern(menuSky.img, `repeat`);
 	menuSky.color = skyPattern;
 	menuSky.render();
@@ -126,15 +154,30 @@ gameStates[`menu`] = function () {
 	drawMenuLoop(menuGrass);
 	drawMenuLoop(menuGround);
 
-	// hover + click
-	var hover = startButton.overlap(mouse);
+	// hover checks
+	var hoverStart = startButton.overlap(mouse);
+	var hoverMusic = musicButton.overlap(mouse);
 
-	if (hover && mouse.pressed) {
+	// music button click
+	if (hoverMusic && mouse.pressed) {
+		if (!menuMusicStarted) {
+			if (sounds) sounds.play(`menuMusic`, 0, true);
+			menuMusicStarted = true;
+		}
+		else {
+			if (sounds) sounds.stop(`menuMusic`);
+			menuMusicStarted = false;
+		}
+	}
+
+	// start button click
+	if (hoverStart && mouse.pressed) {
 		if (sounds) sounds.stop(`menuMusic`);
 		menuMusicStarted = false;
 		gameStates.changeState(`level1`);
 	}
 
-	// draw the button
-	drawStartButton(hover);
+	// draw buttons
+	drawStartButton(hoverStart);
+	drawMusicButton(hoverMusic);
 };
