@@ -1,11 +1,7 @@
 /*----------------------------------------------
+
 player.js (UPDATED for strip-based animations)
 
-Adds: jump, fall, land (optional) using your strips.
-Each state uses its own horizontal spritesheet strip.
-
-IMPORTANT: In your engine, "fps" is actually "ticks per frame"
-(counter decrements each update). Smaller = faster animation.
 ----------------------------------------------*/
 
 function buildFrames(count, frameW, frameH, startY) {
@@ -39,8 +35,6 @@ var playerData = {
       frames: buildFrames(16, 64, 48)
     },
 
-    // Your engine expects "walk" state name.
-    // We map it to the run strip.
     walk: {
       src: `images/run_R.png`,
       fps: 1,
@@ -56,7 +50,7 @@ var playerData = {
       frames: buildFrames(3, 64, 48)
     },
 
-    // Falling / in-air descent (usually looping)
+    // Falling / in-air descent
     fall: {
       src: `images/fall_R.png`,
       fps: 2,
@@ -72,8 +66,7 @@ var playerData = {
       frames: buildFrames(2, 64, 48)
     },
 
-    // You don’t have a crouch strip in what you posted.
-    // This makes crouch a static hold on the first idle frame.
+    // Crouch animation 
     crouch: {
       src: `images/idle_R.png`,
       fps: 999999,
