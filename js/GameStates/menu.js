@@ -1,6 +1,6 @@
 /*---------------------------------
 This file contains all of the code for the Main Menu
-Uses your parallax layers as the menu background (same canvas: 1024x512)
+Uses parallax layers as the menu background (same canvas: 1024x512)
 ----------------------------------*/
 
 // ---------- Button ----------
@@ -9,7 +9,7 @@ var startButton = new GameObject({
 	y: canvas.height * 0.68,
 	width: 260,
 	height: 70,
-	color: `rgba(0,0,0,0)` // we draw it ourselves
+	color: `rgba(0,0,0,0)`
 });
 startButton.hitBoxWidth = startButton.width;
 startButton.hitBoxHeight = startButton.height;
